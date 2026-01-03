@@ -1,4 +1,4 @@
-from concurrent.futures import ProcessPoolExecutor
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from tqdm import tqdm
 from skin_lesion.dataset.sample import Sample
@@ -58,14 +58,13 @@ def group_files_by_id(root: Path) -> list[SamplePaths]:
 
     return samples
 
-def load_dataset(root: Path, image_size: tuple[int, int]) -> list[Sample]:
+def load_dataset(root: Path, image_size: tuple[int, int], max_workers = 8) -> list[Sample]:
     path_samples: list[SamplePaths] = group_files_by_id(root)
 
     tasks = [(p, image_size) for p in path_samples]
-
     samples: list[Sample] = []
 
-    with ProcessPoolExecutor() as executor:
+    with ThreadPoolExecutor(max_workers=max_workers) as executor:
         for sample in tqdm(
             executor.map(_load_one_sample, tasks),
             total=len(tasks),
