@@ -1,7 +1,7 @@
 from tqdm import tqdm
 from skin_lesion.dataset.sample import Sample
 import numpy as np
-from concurrent.futures import ProcessPoolExecutor, as_completed
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import Iterable
 
 from skin_lesion.features.extract import extract_features
@@ -9,11 +9,14 @@ from skin_lesion.features.extract import extract_features
 def _extract_one(sample: Sample) -> tuple[str, np.ndarray]:
     return sample.id, extract_features(sample)
 
-def extract_feature_matrix(samples: Iterable[Sample]) -> tuple[np.ndarray, list[str]]:
+def extract_feature_matrix(
+    samples: Iterable[Sample],
+    max_workers: int | None = None,
+) -> tuple[np.ndarray, list[str]]:
     features: list[np.ndarray] = []
     ids: list[str] = []
 
-    with ProcessPoolExecutor() as executor:
+    with ThreadPoolExecutor(max_workers=max_workers) as executor:
         futures = [
             executor.submit(_extract_one, sample)
             for sample in samples
